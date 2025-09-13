@@ -1,5 +1,329 @@
 ---
 title: "PS1"
-format: pdf
+format:
+  html:
+    code-overflow: wrap
+    embed-resources: true
 ---
 
+Github link: https://github.com/kpngbsee/stats506.git
+I am having trouble adding my files due to the error:
+error: open("problem_sets/nul"): No such file or directory
+error: unable to index file 'problem_sets/nul'
+fatal: adding files failed
+
+I will add and commit my files properly when I get it fixed. Sorry for any inconvenience.
+
+## Problem 1: Abalone Data
+
+a.  Import the data into a data.frame in R. Use the information in the “abalone.names” file to give appropriate column names. (Note: Downloading and unzipping the file can take place outside of your submitted document, but importing the file should be in the submission.)
+```{r}
+# rm(list=ls())
+abalone_data <- read.csv("data/abalone/abalone.data", header = FALSE)
+
+# set appropriate colnames according to abalone.names
+colnames(abalone_data) <- c("Sex", "Length", "Diam", "Height", "Whole", "Shucked", "Viscera", "Shell", "Rings")
+```
+
+After setting appropriate column names, the first few rows and numerical summary of the data is displayed below.
+``` {r}
+head(abalone_data)
+```
+
+b.  The data contains information on three different sexes of abalone. Report the number of observations belonging to each sex.
+```{r}
+table(abalone_data$Sex)
+```
+There are 1307 female, 1342 infant, and 1528 male.
+
+c.  Use the data to answer the following questions:
+
+1.  Which weight has the highest correlation with rings?
+``` {r}
+cor(abalone_data$Rings, abalone_data[5:8])
+```
+Shell weight has the highest correlation with rings with a correlation coefficient of 0.627574.
+
+2.  For that weight, which sex has the highest correlation?
+``` {r}
+sexes <- unique(abalone_data$Sex)
+sapply(sexes, function(sex) {
+  abalone_by_sex <- abalone_data[abalone_data$Sex == sex, ]
+  cor(abalone_by_sex[["Shell"]], abalone_by_sex$Rings)
+})
+```
+Infants have the highest correlation between shell weight and rings with a value of 0.7254357.
+
+3.  What are the weights of the abalone with the most rings?
+``` {r}
+most_rings_idx <- which.max(abalone_data$Rings)
+abalone_data[most_rings_idx, 5:8]
+```
+The abalone with the most rings has a whole weight of 1.81, shucked weight of 0.71, viscera weight of 0.32, and shell weight of 0.475.
+
+4.  What percentage of abalones have a viscera weight larger than their shell weight?
+``` {r}
+mean(abalone_data$Viscera > abalone_data$Shell)
+```
+6.51% of abalones have a viscera weight larger than their shell weight
+
+d.  Create a table of correlations between weights and rings, within each sex. The columns should be the four weights, and the rows should be the sexes.
+``` {r}
+weights <- c("Whole", "Shucked", "Viscera", "Shell")
+
+sapply(weights, function(w) {
+  sapply(sexes, function(sex) {
+    abalone_by_sex <- abalone_data[abalone_data$Sex == sex, ]
+    cor(abalone_by_sex[[w]], abalone_by_sex$Rings)
+  })
+})
+```
+
+e. Carry out a series of t-tests to examine whether the number of rings differs across the three sexes. Present the R output and interpret the results.
+
+First, I create a function that allows me to manually carry out Welch's t-test.
+``` {r}
+#' manual implementation of Welch's t-test
+#'
+#' @param sex1 a character
+#' @param sex2 a character
+#'
+#' @returns a list of the p-value, t-stat, and df
+#'
+#' @examples
+#' manual_t_test("M", "F")
+#' manual_t_test("I", "F")
+manual_t_test <- function(sex1, sex2) {
+  rings1 <- abalone_data$Rings[abalone_data$Sex == sex1]
+  rings2 <- abalone_data$Rings[abalone_data$Sex == sex2]
+  
+  var1 <- var(rings1)
+  var2 <- var(rings2)
+  
+  n1 <- length(rings1)
+  n2 <- length(rings2)
+  
+  t_stat <- abs((mean(rings1) - mean(rings2)) / (sqrt((var1/n1) + (var2/n2))))
+  df <- ((var1/n1)+(var2/n2))^2 / ( (((var1/n1)^2)/(n1-1)) + (((var2/n2)^2)/(n2-1)))
+  
+  p_val <- 2 * pt(-t_stat, df)
+  return(c("p-value" = signif(p_val, 4), "t-stat" = signif(t_stat, 4), "df" = signif(df, 4)))
+}
+```
+
+Next, let's carry out the Welch's t-test. We'll start with the difference between male and female. 
+``` {r}
+manual_t_test("M", "F")
+```
+The p-value is very small, which indicates that there is a statistically significant difference in the number of rings between male and female abalone. 
+
+Next, between infant and female.
+``` {r}
+manual_t_test("I", "F")
+```
+The p-value is very small, which indicates a significant difference in the number of rings between infant and female abalone.
+
+Lastly, between male and infant.
+``` {r}
+manual_t_test("M", "I")
+```
+The p-value is very small, which indicates a significant difference in the number of rings between infant and female abalone.
+
+Just to check my function, let's test it against the t.test function provided in R between M and F.
+``` {r}
+t.test(Rings ~ Sex, data = abalone_data, subset = Sex %in% c("M", "F"))
+```
+The p-value given here is 0.0002514, which is the same as the one given by my manual implementation.
+
+## Problem 2 - Food Expenditure Data
+
+a. Import the data into a data.frame in R. As with the abalone data, you may download the data outside of your submission, but importation should take place inside the problem set submission.
+```{r}
+food_data <- read.csv("data/food_expenditure.csv")
+```
+
+b. Clean up the variable names. Simplify them.
+``` {r}
+# take a look at the column names
+colnames(food_data)
+
+# clean it up
+colnames(food_data) <- c("ID", "Age", "Household", "State", "Currency", 
+                         "Expenditure_Total", "Expenditure_Grocery", "Expenditure_Dining", "Expenditure_Misc",
+                         "Num_Dining", "Alcohol", "Assistance")
+# display first few rows
+head(food_data)
+```
+
+c. Restrict the data to those paying in US dollars (USD). Show that it worked by confirming the number of observations before and after restricting the data.
+``` {r}
+nrow(food_data)
+food_usd <- food_data[food_data$Currency == "USD", ]
+nrow(food_usd)
+```
+Before restricting the data, there were 262 rows. After restricting the data, it dropped to 230.
+
+The questions after this relate to data cleaning.
+
+d. The variable related to age.
+Firstly, let's take a look at what the numerical summary shows.
+``` {r}
+summary(food_usd$Age)
+```
+The minimum is 2, and the maximum is 150, both of which seem improbable. Furthermore, there are 9 NAs. Next, let's take a look at the boxplot.
+``` {r}
+boxplot(food_usd$Age)
+```
+From the boxplot, we can see that the entry of "150" is an outlier, so we can remove that. Furthermore, I will choose to limit the lower bound of the age to 16, which is when minors are typically able to start working, to my knowledge. I will also remove the NA values.
+``` {r}
+food_updated <- food_usd[(food_usd$Age >= 16) & (food_usd$Age < 150) & !is.na(food_usd$Age), ]
+summary(food_updated$Age)
+```
+Above is the updated numerical summary of the cleaned age data.
+
+e. The variable related to state.
+First, I display the unique values in the state variable. I also sort it for easy viewing.
+``` {r}
+sort(unique(food_updated$State))
+```
+From the above, we can see empty values "", and made up states "XX". Apparently, there is a list of official states available in R, so I will clean the data based on the states present in that list.
+``` {r}
+food_updated <- food_updated[food_updated$State %in% state.abb, ]
+sort(unique(food_updated$State))
+```
+I'm going to trust that the R states are accurate because I do not actually know.
+
+f. The four variables related to food expenditures.
+Let's look at a numerical summary of the expenditures.
+``` {r}
+expenditures <- c("Expenditure_Total", "Expenditure_Grocery", "Expenditure_Dining", "Expenditure_Misc")
+summary(food_updated[expenditures])
+```
+The first big red flag is that the total expenditure is not numerical. Next, there are negative values in grocery and dining. There are also NA values.
+
+First, let's take a look at the total expenditure to see why it was classified as character values.
+``` {r}
+sort(unique(food_updated$Expenditure_Total))
+```
+There is a value "~350" that I believe is causing total expenditure to be character instead of numerical, hence, I will change "~350" to just "350", then attempt to convert the total expenditure column to be numeric.
+``` {r}
+food_updated$Expenditure_Total[food_updated$Expenditure_Total == "~350"] <- "350"
+food_updated$Expenditure_Total <- as.numeric(food_updated$Expenditure_Total)
+summary(food_updated[expenditures])
+```
+The conversion was successful. Next, I will handle the negative numbers. I am going to take the absolute of all the values to make the negative numbers positive, as I do not believe they are errors, rather they are likely a misunderstanding of the question. 
+``` {r}
+food_updated[expenditures] <- abs(food_updated[expenditures])
+summary(food_updated[expenditures])
+```
+
+We see a minimum of 0 for total expenditure, even though other expenditures do not have a total of zero. This is likely an error, so I will remove it. I will also remove the NA values in the meantime.
+``` {r}
+food_updated <- food_updated[food_updated$Expenditure_Total != 0, ]
+food_updated <- food_updated[!is.na(food_updated$Expenditure_Total), ]
+food_updated <- food_updated[!is.na(food_updated$Expenditure_Grocery), ]
+food_updated <- food_updated[!is.na(food_updated$Expenditure_Dining), ]
+food_updated <- food_updated[!is.na(food_updated$Expenditure_Misc), ]
+summary(food_updated[expenditures])
+```
+The above numerical summary reflects the cleaned expenditure data.
+
+g. The variable related to number of times dining out.
+``` {r}
+summary(food_updated$Num_Dining)
+boxplot(food_updated$Num_Dining)
+```
+I have displayed the numerical summary and a boxplot of the dining out data above, and frankly, I cannot think of a way to clean this further, as it seems to make sense to me.
+
+h. Report your final number of observations after this cleaning.
+``` {r}
+nrow(food_updated)
+```
+After cleaning, I am left with 139 observations.
+
+## Problem 3 - Collatz conjecture
+
+a. Write function nextCollatz that given a positive integer, computes the next number in its Collatz sequence. 
+```{r}
+#' computes the next number in a number's Collatz sequence
+#'
+#' @param n a positive integer
+#'
+#' @returns a positive integer
+#'
+#' @examples
+#' nextCollatz(5)
+#' nextCollatz(16)
+nextCollatz <- function(n) {
+  # error checks
+  if (!is.numeric(n)) {
+    stop("n must be numeric")
+  }
+  if (n <= 0 || n %% 1 != 0) {
+    stop("n must be a positive integer")
+  }
+  
+  # if n is even
+  if (n %% 2 == 0) {
+    return(n/2)
+  } else {
+    return(3*n+1)
+  }
+}
+
+nextCollatz(5)
+nextCollatz(16)
+```
+
+b. Create a function collatzSequence that returns the Collatz sequence for a given input. 
+``` {r}
+#' returns the Collatz sequence and its length
+#'
+#' @param n a positive integer
+#'
+#' @returns a list containing the vector of the entries in the Collatz sequence; and the length of the Collatz sequence
+#'
+#' @examples
+#' collatzSequence(5)
+#' collatzSequence(19)
+collatzSequence <- function(n) {
+  # error checks 
+  if (!is.numeric(n)) {
+    stop("n must be numeric")
+  }
+  if (n <= 0 || n %% 1 != 0) {
+    stop("n must be a positive integer")
+  }
+  
+  # initiate sequence
+  seq <- n
+  while (n != 1) {
+    n <- nextCollatz(n)
+    seq <- c(seq, n)
+  }
+  
+  return(list(seq, length(seq)))
+}
+
+collatzSequence(5)
+collatzSequence(19)
+```
+
+c. Use these functions to find the shortest and longest Collatz sequence starting with values between 100 and 500, inclusive. In the case of ties, report the lowest starting value.
+``` {r}
+values <- 100:500
+
+collatz_lengths <- sapply(values, function(value) {
+  collatzSequence(value)[[2]]
+})
+
+
+shortest_length <- min(collatz_lengths)
+shortest_ind <- which.min(collatz_lengths)
+longest_length <- max(collatz_lengths)
+longest_ind <- which.max(collatz_lengths)
+
+c(shortest_length, longest_length)
+c(values[shortest_ind], values[longest_ind])
+```
+The shortest Collatz sequence begins with the value of 128 and is of length 8. The longest Collatz sequence begins with the value of 327 and has a length of 144.
