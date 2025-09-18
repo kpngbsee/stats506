@@ -1,0 +1,186 @@
+---
+title: "PS2"
+format:
+  html:
+    code-overflow: wrap
+    embed-resources: true
+    theme: simplex
+---
+
+## Problem 1
+
+a. 
+``` {r}
+# loop
+random_walk1 <- function(n) {
+  probs <- runif(n)
+  
+  # start at 0 
+  position <- 0
+  
+  for (i in 1:n) {
+    # move +1 or -1 with 50/50 probability
+    if (probs[i] < 0.5) {
+      # if +1 is chosen, 5% of the time (0.05 * 0.5) move +10
+      if (probs[i] < 0.025) {
+        position <- position + 10
+      } else {
+        position <- position + 1
+      }
+    } else {
+      # if -1 is chosen, 20% of the time (0.20 * 0.5) move -3
+      if (probs[i] > 0.9) {
+        position <- position - 3
+      } else {
+        position <- position - 1
+      }
+    }
+  }
+  
+  return(position)
+}
+
+# vectorized
+random_walk2 <- function(n) {
+  probs <- runif(n)
+  
+  steps <- rep(1, times=n)
+  steps[probs < 0.025] <- 10
+  steps[probs > 0.5] <- -1
+  steps[probs > 0.9] <- -3
+  
+  return(sum(steps))
+}
+
+# apply
+random_walk3 <- function(n) {
+  probs <- runif(n)
+  
+  steps <- sapply(1:n, function(i) {
+    if (probs[i] < 0.5) {
+      if (probs[i] < 0.025) {
+        return(10)
+      } else {
+        return(1)
+      }
+    } else {
+      if (probs[i] > 0.9) {
+       return(-3)
+      } else {
+        return(-1)
+      }
+    }
+  })
+  
+  return(sum(steps))
+}
+
+random_walk1(10)
+random_walk2(10)
+random_walk3(10)
+random_walk1(1000)
+random_walk2(1000)
+random_walk3(1000)
+```
+
+b. 
+``` {r}
+non_random_walk1 <- function(n) {
+  
+  # remove randomization and generate probabilities
+  set.seed(1)
+  probs <- runif(n)
+  
+  # start at 0 
+  position <- 0
+  
+  for (i in 1:n) {
+    # move +1 or -1 with 50/50 probability
+    if (probs[i] < 0.5) {
+      # if +1 is chosen, 5% of the time (0.05 * 0.5) move +10
+      if (probs[i] < 0.025) {
+        position <- position + 10
+      } else {
+        position <- position + 1
+      }
+    } else {
+      # if -1 is chosen, 20% of the time (0.20 * 0.5) move -3
+      if (probs[i] > 0.9) {
+        position <- position - 3
+      } else {
+        position <- position - 1
+      }
+    }
+  }
+  
+  return(position)
+}
+
+non_random_walk2 <- function(n) {
+  
+  # remove randomization and generate probabilities
+  set.seed(1)
+  probs <- runif(n)
+  
+  steps <- rep(1, times=n)
+  steps[probs < 0.025] <- 10
+  steps[probs > 0.5] <- -1
+  steps[probs > 0.9] <- -3
+  
+  return(sum(steps))
+}
+
+non_random_walk3 <- function(n) {
+  
+  # remove randomization and generate probabilities
+  set.seed(1)
+  probs <- runif(n)
+  
+  steps <- sapply(1:n, function(i) {
+    if (probs[i] < 0.5) {
+      if (probs[i] < 0.025) {
+        return(10)
+      } else {
+        return(1)
+      }
+    } else {
+      if (probs[i] > 0.9) {
+       return(-3)
+      } else {
+        return(-1)
+      }
+    }
+  })
+  
+  return(sum(steps))
+}
+
+non_random_walk1(10)
+non_random_walk2(10)
+non_random_walk3(10)
+non_random_walk1(1000)
+non_random_walk2(1000)
+non_random_walk3(1000)
+```
+
+c. 
+``` {r}
+# install.packages("microbenchmark")
+library(microbenchmark)
+microbenchmark(random_walk1(1000), random_walk2(1000), random_walk3(1000))
+microbenchmark(random_walk1(100000), random_walk2(100000), random_walk3(100000))
+```
+
+d.
+
+For this example, I will use the vectorized random walk function to reduce runtime. As seen from part (b), each function can produce the same result while controlling for randomization, so the vectorized function will not return a different result from the other functions.
+``` {r}
+reps <- 10000
+ns <- c(10, 100, 1000)
+
+position_probs = vector(length = length(ns))
+
+for (n in seq_along(ns)) {
+  position_probs[i] <- random_walk2(n)
+}
+```
