@@ -11,6 +11,8 @@ format:
 
 a. 
 ``` {r}
+# rm(list=ls())
+
 # loop
 random_walk1 <- function(n) {
   probs <- runif(n)
@@ -175,12 +177,99 @@ d.
 
 For this example, I will use the vectorized random walk function to reduce runtime. As seen from part (b), each function can produce the same result while controlling for randomization, so the vectorized function will not return a different result from the other functions.
 ``` {r}
-reps <- 10000
 ns <- c(10, 100, 1000)
 
-position_probs = vector(length = length(ns))
-
-for (n in seq_along(ns)) {
-  position_probs[i] <- random_walk2(n)
+estimate_random_walk <- function(n, reps = 10000) {
+  return(replicate(reps, random_walk2(n)))
 }
+
+position_probs <- vector(length = length(ns))
+
+for (i in seq_along(ns)) {
+  random_walks <- estimate_random_walk(ns[i])
+  position_probs[i] <- mean(random_walks == 0)
+}
+
+position_probs
 ```
+
+## Problem 2
+
+``` {r}
+estimate_cars <- function() {
+  num_cars <- rep(0, times = 24)
+  num_cars[1:8] <- rpois(length(num_cars[1:8]), lambda=1)
+  num_cars[10:18] <- rpois(length(num_cars[10:18]), lambda=8)
+  num_cars[19:24] <- rpois(length(num_cars[19:24]), lambda=12)
+  num_cars[c(9,18)] <- rnorm(length(num_cars[c(9,18)]), mean = 60, sd = sqrt(12))
+  return(sum(num_cars))
+}
+
+reps <- 10000
+estimated_cars <- replicate(reps, estimate_cars())
+mean(estimated_cars)
+```
+
+## Problem 3
+``` {r}
+youtube <- read.csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-03-02/youtube.csv')
+```
+
+a. 
+``` {r}
+dim(youtube)
+colnames(youtube)
+youtube_new <- youtube[, -c(2, 3, 4, 12, 14, 20, 21, 22, 23, 24)]
+dim(youtube_new)
+colnames(youtube_new)
+```
+
+b.
+From the numerical summary, we can see NA values, so I will clean them here in this step.
+``` {r}
+summary(youtube_new[, 10:14])
+youtube_clean <- na.omit(youtube_new)
+
+par(mfrow=c(2,3))
+hist(youtube_clean$view_count, breaks=12)
+hist(youtube_clean$like_count, breaks=12)
+hist(youtube_clean$dislike_count, breaks=12)
+hist(youtube_clean$favorite_count, breaks=12)
+hist(youtube_clean$comment_count, breaks=12)
+
+pairs(youtube_clean[, 10:14])
+```
+
+``` {r}
+youtube_clean$log_views    <- log1p(youtube_clean$view_count)
+youtube_clean$log_likes    <- log1p(youtube_clean$like_count)
+youtube_clean$log_dislikes <- log1p(youtube_clean$dislike_count)
+youtube_clean$log_comments <- log1p(youtube_clean$comment_count)
+```
+
+c. 
+``` {r}
+predictors <- c("funny", "show_product_quickly", "patriotic",
+                "celebrity", "danger", "animals", "use_sex", "year")
+
+model_views <- lm(log_views ~ ., data = youtube_clean[, c("log_views", predictors)])
+model_likes <- lm(log_likes ~ ., data = youtube_clean[, c("log_likes", predictors)])
+model_dislikes <- lm(log_dislikes ~ ., data = youtube_clean[, c("log_dislikes", predictors)])
+model_comments <- lm(log_comments ~ ., data = youtube_clean[, c("log_comments", predictors)])
+
+summary(model_views)
+summary(model_likes)
+summary(model_dislikes)
+summary(model_comments)
+```
+
+d. 
+``` {r}
+X <- model.matrix(log_views ~ ., data = youtube_clean[, c("log_views", predictors)])
+y <- as.numeric(youtube_clean$log_views)
+
+solve(t(X) %*% X) %*% t(X) %*% y
+coef(model_views)
+```
+
+From the above, we can see that the results are the same.
