@@ -7,10 +7,12 @@ format:
     theme: simplex
 ---
 
+
 ## Problem 1
 
 a. 
 Version 1 of the modified random walk function is implemented below:
+
 ``` {r}
 # rm(list=ls())
 
@@ -44,7 +46,9 @@ random_walk1 <- function(n) {
 }
 ```
 
+
 Version 2 of the modified random walk function is implemented below:
+
 ``` {r}
 # vectorized
 random_walk2 <- function(n) {
@@ -59,7 +63,9 @@ random_walk2 <- function(n) {
 }
 ```
 
+
 Version 3 of the modified random walk function is implemented below:
+
 ``` {r}
 # apply
 random_walk3 <- function(n) {
@@ -85,7 +91,9 @@ random_walk3 <- function(n) {
 }
 ```
 
+
 Here, I test whether the functions work:
+
 ``` {r}
 c(random_walk1(10),
   random_walk2(10),
@@ -95,8 +103,10 @@ c(random_walk1(10),
   random_walk3(1000))
 ```
 
+
 b. 
 For this section, I modify the functions to control the randomization by setting the seed to 1. 
+
 ``` {r}
 non_random_walk1 <- function(n) {
   
@@ -169,7 +179,9 @@ non_random_walk3 <- function(n) {
 }
 ```
 
+
 By running the functions for n=10 and n=1000, I get the same results for all 3 functions.
+
 ``` {r}
 c(non_random_walk1(10),
   non_random_walk2(10),
@@ -179,17 +191,21 @@ c(non_random_walk1(10),
   non_random_walk3(1000))
 ```
 
+
 c. 
+
 ``` {r}
 # install.packages("microbenchmark")
 library(microbenchmark)
 microbenchmark(random_walk1(1000), random_walk2(1000), random_walk3(1000))
 microbenchmark(random_walk1(100000), random_walk2(100000), random_walk3(100000))
 ```
+
 From the microbenchmark, the second version (the vectorized version) is the fastest, followed by the loop function, and the slowest is the apply function. This is consistent between low input and large input. 
 
 d.
 For this example, I will use the vectorized random walk function to reduce runtime. As seen from part (b), each function can produce the same result while controlling for randomization, so the vectorized function will not return a different result from the other functions.
+
 ``` {r}
 ns <- c(10, 100, 1000)
 
@@ -206,9 +222,11 @@ for (i in seq_along(ns)) {
 
 position_probs
 ```
+
 The probability the random walk ends at 0 becomes closer to 0% as the number of steps increase. I think this is because, at higher step counts, it is more likely that there is at least one occurrence of taking +10 or -3 steps, and it is less likely that there is an equal number of +1 or -1 to reconcile it back to a position of zero. From the Monte Carlo simulation above, we see that the probability decreases from 13% at 10 steps to 1.9% at 100 steps to 0.6% at 1000 steps. 
 
 ## Problem 2
+
 
 ``` {r}
 estimate_cars <- function() {
@@ -236,37 +254,47 @@ hist(estimated_cars)
 abline(v=mean(estimated_cars), col='red')
 mean(estimated_cars)
 ```
+
 The mean is about 264 cars per day.
 
 ## Problem 3
+
 ``` {r}
 youtube <- read.csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-03-02/youtube.csv')
 ```
 
+
 a. 
+
 
 ``` {r}
 dim(youtube)
 colnames(youtube)
 ```
+
 Before removing the identifying columns, the dimensions are 247 rows and 25 columns. For this section, I will choose to remove brand, superbowl_ads_dot_com_url, youtube_url, id, etag, published_at, title, description, and channel_title.
+
 
 ``` {r}
 youtube_new <- youtube[, -c(2, 3, 4, 12, 14, 20, 21, 22, 23, 24)]
 colnames(youtube_new)
 dim(youtube_new)
 ```
+
 After removing the columns, the dimensions are 247 rows and 15 columns.
 
 b.
 I start by making a numerical summary for these variables. From the numerical summary, we can see NA values, so I cleaned the NA values.
+
 ``` {r}
 summary(youtube_new[, 10:14])
 youtube_clean <- na.omit(youtube_new)
 summary(youtube_clean[, 10:14])
 ```
 
+
 Next, I look at the histograms of the predictors to see their distribution.
+
 ``` {r}
 par(mfrow=c(2,3))
 hist(youtube_clean$view_count, breaks=12)
@@ -275,6 +303,7 @@ hist(youtube_clean$dislike_count, breaks=12)
 hist(youtube_clean$favorite_count, breaks=12)
 hist(youtube_clean$comment_count, breaks=12)
 ```
+
 From both the numerical and graphical summaries above, I concluded that: 
 
 * View, Like, Dislike, Comment counts: These variables are appropriate to use, however, due to their right skew, they may require a log transformation
@@ -282,6 +311,7 @@ From both the numerical and graphical summaries above, I concluded that:
 * Favorite counts: This variable is not appropriate to use as it is the constant zero.
 
 Hence, in this section, I carry out the log transformation. However, due to the minimum of zero as shown in the numerical summary (view count's minimum is 10, but I wanted to keep it consistent and, truthfully, it just looked ugly doing only one log and the rest log1p, so please bear with me), I chose to use the log1p() function which computes log(1+x) to avoid errors with a log transformation on zero.
+
 ``` {r}
 youtube_clean$log_views    <- log1p(youtube_clean$view_count)
 youtube_clean$log_likes    <- log1p(youtube_clean$like_count)
@@ -289,7 +319,9 @@ youtube_clean$log_dislikes <- log1p(youtube_clean$dislike_count)
 youtube_clean$log_comments <- log1p(youtube_clean$comment_count)
 ```
 
+
 Here are the histograms of the transformed variables. The log1p of dislikes and comments both still look slightly skewed, but definitely less skewed than before the transformation.
+
 ``` {r}
 par(mfrow=c(2,2))
 hist(youtube_clean$log_views, breaks=12)
@@ -298,8 +330,10 @@ hist(youtube_clean$log_dislikes, breaks=12)
 hist(youtube_clean$log_comments, breaks=12)
 ```
 
+
 c. 
 Next, I fit the models for the variables I decided were appropriate and transformed, which are the models for log1p(view count), log1p(like  count), log1p(dislike count), and log1p(comment count). From the summaries seen later, "year" is shown to be a continuous variable, so I did not have to control for year to be a continuous variable.
+
 ``` {r}
 predictors <- c("funny", "show_product_quickly", "patriotic",
                 "celebrity", "danger", "animals", "use_sex", "year")
@@ -313,25 +347,33 @@ model_comments <- lm(log_comments ~ ., data = youtube_clean[, c("log_comments", 
 ``` {r}
 summary(model_views)
 ```
+
 Firstly, the model that predicts the log1p of view counts. This model performed rather poorly, with an R-squared of only 0.03866. None of the predictors were deemed to be statistically significant, as none of their p-values are below 0.05. I would say that this may be because view counts is largely due to luck, on whether or not the ad goes viral or not.
+
 
 ``` {r}
 summary(model_likes)
 ```
+
 Secondly, the model that predicts log1p of like counts. This model also performed poorly with an R-squared of 0.07503. The predictor "year" has a p-value of 0.0195 < 0.05, which indicates that it is statistically significant. The direction of its estimated coefficient is positive, which means that there is a positive relationship between year and log1p(like counts). In other words, as year increases, log1p(like counts) increases. This might be because more recently, people are more inclined to engage with online content compared to the past.
+
 
 ``` {r}
 summary(model_dislikes)
 ```
+
 Thirdly, the model that predicts log1p of dislike counts. This model also performed poorly with an R-squared of 0.09959. For this model, year is statistically significant, and the estimated coefficient is positive, which means that the relationship between year and log1p(dislike counts) is positive. In other words, as year increases, log1p(dislike counts) increases. The reasoning behind this may be similar to that of the log1p of like counts, that recently, people are more likely to engage with online content.
+
 
 ``` {r}
 summary(model_comments)
 ```
+
 Lastly, the model that predicts log1p of comment counts. This model also performed poorly with an R-squared of 0.0816. Both patriotic and year were deemed to be statistically significant, with the estimated coefficients being positive. In other words, if the advertisement had patriotic elements, it is more likely to get more comments; if the year increases, log1p(comment counts) increases. For the predictor of year, the reasoning is likely similar to that of the log1p of likes and dislikes. As for patriotic, it might be that people feel incentivized to share their own opinions and experiences regarding their patriotic thoughts if the ad is patriotic.
 
 d. 
 For this section, I create a design matrix using the model.matrix function on the model of log1p(view counts). I also create the y using the log1p(view counts). I then calculate it manually. 
+
 ``` {r}
 X <- model.matrix(log_views ~ ., data = youtube_clean[, c("log_views", predictors)])
 y <- as.numeric(youtube_clean$log_views)
@@ -339,4 +381,5 @@ y <- as.numeric(youtube_clean$log_views)
 solve(t(X) %*% X) %*% t(X) %*% y
 coef(model_views)
 ```
+
 From the above, we can see that the results are the same.
