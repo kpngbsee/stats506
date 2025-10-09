@@ -3177,7 +3177,7 @@ vertical-align: -.125em;
 <span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">random_walk2</span>(<span class="dv">1000</span>),</span>
 <span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">random_walk3</span>(<span class="dv">1000</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>[1]   2  -2  -6  42 -11  99</code></pre>
+<pre><code>[1]  0 -2  4 83 71 47</code></pre>
 </div>
 </div>
 <ol start="2" type="a">
@@ -3278,18 +3278,18 @@ vertical-align: -.125em;
 <div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="fu">microbenchmark</span>(<span class="fu">random_walk1</span>(<span class="dv">1000</span>), <span class="fu">random_walk2</span>(<span class="dv">1000</span>), <span class="fu">random_walk3</span>(<span class="dv">1000</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Unit: microseconds
-               expr   min    lq    mean median     uq    max neval
- random_walk1(1000)  66.0  68.9  76.158  70.70  76.15  136.3   100
- random_walk2(1000)  29.4  32.7  41.032  34.60  41.75  139.6   100
- random_walk3(1000) 698.8 722.6 799.333 740.65 794.05 2395.1   100</code></pre>
+               expr   min     lq    mean median     uq    max neval
+ random_walk1(1000)  65.7  69.25  83.120  76.05  89.80  176.0   100
+ random_walk2(1000)  30.9  34.85  45.945  40.05  47.20  160.1   100
+ random_walk3(1000) 715.8 756.10 886.558 803.25 956.95 2599.6   100</code></pre>
 </div>
 <div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="fu">microbenchmark</span>(<span class="fu">random_walk1</span>(<span class="dv">100000</span>), <span class="fu">random_walk2</span>(<span class="dv">100000</span>), <span class="fu">random_walk3</span>(<span class="dv">100000</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Unit: milliseconds
-                expr     min       lq       mean    median        uq      max
- random_walk1(1e+05)  6.5243  6.79330   7.504182   7.04805   7.51525  13.5561
- random_walk2(1e+05)  2.7160  2.98125   3.522125   3.28645   3.72870   6.4857
- random_walk3(1e+05) 77.5796 93.25235 108.887655 105.13825 120.17735 183.5903
+                expr     min       lq       mean   median        uq      max
+ random_walk1(1e+05)  6.5172  6.71395   7.429456   6.8631   7.36890  13.4476
+ random_walk2(1e+05)  2.7790  3.03295   3.621592   3.3573   3.65725   8.3936
+ random_walk3(1e+05) 78.8164 94.52300 110.518388 106.1855 117.36330 197.0993
  neval
    100
    100
@@ -3319,7 +3319,7 @@ vertical-align: -.125em;
 <pre><code>[1] 0.1291 0.0186 0.0060</code></pre>
 </div>
 </div>
-<p>The probability the random walk ends at 0 becomes closer to 0% as the number of steps increase. (ADD A JUSTIFICATION) From the Monte Carlo simulation above, we see that the probability decreases from 13% at 10 steps to 1.9% at 100 steps to 0.6% at 1000 steps.</p>
+<p>The probability the random walk ends at 0 becomes closer to 0% as the number of steps increase. I think this is because, at higher step counts, it is more likely that there is at least one occurrence of taking +10 or -3 steps, and it is less likely that there is an equal number of +1 or -1 to reconcile it back to a position of zero. From the Monte Carlo simulation above, we see that the probability decreases from 13% at 10 steps to 1.9% at 100 steps to 0.6% at 1000 steps.</p>
 </section>
 <section id="problem-2" class="level2">
 <h2 class="anchored" data-anchor-id="problem-2">Problem 2</h2>
