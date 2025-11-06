@@ -1,0 +1,34 @@
+---
+title: "stats506-project"
+format: html
+editor: visual
+---
+
+``` {r}
+library(haven)
+data <- read_sav("./GSS_spss/gss7224_r2.sav")
+```
+
+``` {r}
+library(tidyverse)
+
+data %>%
+  # Drop missing values
+  filter(!is.na(satfin), !is.na(year)) %>%
+  
+  # Group by year and work status
+  group_by(year, satfin) %>%
+  
+  # Count how many people fall into each category per year
+  summarise(n = n(), .groups = "drop_last") %>%
+  
+  # Compute proportions by year
+  mutate(prop = n / sum(n)) %>%
+  
+  # Plot
+  ggplot(aes(x = year, y = prop, color = as.factor(satfin))) +
+  geom_line(size = 1.2) +
+  geom_point(size = 1.5) +
+  scale_y_continuous(labels = scales::percent_format()) +
+  theme_minimal() 
+```
