@@ -8,3 +8,390 @@ format:
 ---
 
 ## Problem 1
+Create a class to represent Wald-style normal approximation Confidence Intervals. Do this using S4.
+
+``` {r}
+# rm(list=ls())
+
+# create class
+setClass("waldCI",
+         slots = c(level = "numeric",
+                   mean = "numeric",
+                   sterr = "numeric",
+                   lb = "numeric",
+                   ub = "numeric"))
+```
+
+a. For the waldCI class, define the following:
+1. A constructor, which takes in a confidence level (0,1) and either a mean and standard error, or a lower and upper bound. This should be a custom constructor, not new() or waldCI().
+2. A validator.
+
+For this section, I created a validator first so that I can use it in the constructor.
+``` {r}
+# create validator for use in constructor
+setValidity("waldCI", function(object) {
+  
+  # needed for part c
+  
+  # negative standard error
+  if (object@sterr <= 0) {
+    stop(paste("@sterr = ", object@sterr, " cannot be negative"))
+  }
+  
+  # lb > ub
+  if (object@lb >= object@ub) {
+    stop(paste("@lb = ", object@lb, " cannot be larger than @ub = ", object@ub))
+  }
+  
+  # infinite bounds
+  if (!is.finite(object@lb) || !is.finite(object@ub)) {
+    stop(paste("Bounds must be finite"))
+  }
+  
+  return(TRUE)
+})
+
+# constructor
+waldCI <- function(level, mean = NULL, sterr = NULL, lb = NULL, ub = NULL) {
+  
+  # check level
+  if (missing(level) || level <= 0 || level >= 1) {
+    stop(paste("Confidence level must be a value between (0,1)"))
+  }
+  
+  # fill in empty slots
+  
+  alpha <- 1 - level
+  z <- qnorm(1 - alpha / 2)
+  
+  if (!is.null(mean) && !is.null(sterr)) {
+    lb <- mean - z * sterr
+    ub <- mean + z * sterr
+  } else if (!is.null(lb) && !is.null(ub)) {
+    mean <- (ub + lb) / 2
+    sterr <- (ub - lb) / (2 * z)
+  } else {
+    stop("You must provide either (mean and se) or (lower and upper).")
+  }
+  
+  object <- new("waldCI", level = level, mean = mean, sterr = sterr, lb = lb, ub = ub)
+  validObject(object)
+  return(object)
+}
+```
+
+3. A show method.
+``` {r}
+setGeneric("show",
+           function(object, ...) {
+             standardGeneric("show")
+           })
+setMethod("show", "waldCI",
+  function(object, ...) {
+    cat("Wald Confidence Interval\n")
+    cat("  Confidence level: ", object@level, "\n")
+    cat("  Mean: ", object@mean, "\n")
+    cat("  Standard error: ", object@sterr, "\n")
+    cat("  CI: [", object@lb, ", ", object@ub, "]\n")
+    return(invisible(object))
+  }
+)
+```
+
+4. Accessors: lb, ub, mean, sterr, level.
+``` {r}
+setGeneric("lb", function(object, ...) standardGeneric("lb"))
+setMethod("lb", "waldCI", function(object, ...) object@lb)
+
+setGeneric("ub", function(object, ...) standardGeneric("ub"))
+setMethod("ub", "waldCI", function(object, ...) object@ub)
+
+setGeneric("mean", function(object, ...) standardGeneric("mean"))
+setMethod("mean", "waldCI", function(object, ...) object@mean)
+
+setGeneric("sterr", function(object, ...) standardGeneric("sterr"))
+setMethod("sterr", "waldCI", function(object, ...) object@sterr)
+
+setGeneric("level", function(object, ...) standardGeneric("level"))
+setMethod("level", "waldCI", function(object, ...) object@level)
+```
+
+5. Setters: lb, ub, mean, sterr, level. Be sure to validate the resulting waldCI.
+``` {r}
+setGeneric("lb<-",
+           function(object, value, ...) {
+             standardGeneric("lb<-")
+           })
+setMethod("lb<-", "waldCI",
+  function(object, value, ...) {
+    object@lb <- value
+    validObject(object)
+    return(object)
+  }
+)
+
+setGeneric("ub<-",
+           function(object, value, ...) {
+             standardGeneric("ub<-")
+           })
+setMethod("ub<-", "waldCI",
+  function(object, value, ...) {
+    object@ub <- value
+    validObject(object)
+    return(object)
+  }
+)
+
+setGeneric("mean<-",
+           function(object, value, ...) {
+             standardGeneric("mean<-")
+           })
+setMethod("mean<-", "waldCI",
+  function(object, value, ...) {
+    object@mean <- value
+    validObject(object)
+    return(object)
+  }
+)
+
+setGeneric("sterr<-",
+           function(object, value, ...) {
+             standardGeneric("sterr<-")
+           })
+setMethod("sterr<-", "waldCI",
+  function(object, value, ...) {
+    object@sterr <- value
+    validObject(object)
+    return(object)
+  }
+)
+
+setGeneric("level<-",
+           function(object, value, ...) {
+             standardGeneric("level<-")
+           })
+setMethod("level<-", "waldCI",
+  function(object, value, ...) {
+    object@level <- value
+    validObject(object)
+    return(object)
+  }
+)
+```
+
+6. A contains method, returning a logical of whether a value is within a CI.
+``` {r}
+setGeneric("contains", function(object, value, ...) standardGeneric("contains"))
+setMethod("contains", "waldCI",
+          function(object, value, ...) {
+            return(value >= object@lb && value <= object@ub)
+          })
+```
+
+7. An overlap method, that takes in two waldCI’s, and returns a logical of whether the two confidence intervals overlap.
+``` {r}
+setGeneric("overlap", function(ci1, ci2, ...) standardGeneric("overlap"))
+setMethod("overlap", signature(ci1 = "waldCI", ci2 = "waldCI"),
+          function(ci1, ci2, ...) {
+            return(max(ci1@lb, ci2@lb) <= min(ci1@ub, ci2@ub))
+          })
+```
+
+8. as.numeric to return c(lb, ub). (Hint: The second argument of setGeneric is not needed when an existing s3 function uses the .Primitive function.)
+``` {r}
+setMethod("as.numeric", "waldCI", function(x, ...) {
+  c(x@lb, x@ub)
+})
+```
+
+9. transformCI which takes in a function and a waldCI, and returns the transformed waldCI object. Warn the user that only monotonic functions make sense.
+``` {r}
+setGeneric("transformCI", function(object, foo, ...) standardGeneric("transformCI"))
+setMethod("transformCI", signature(object = "waldCI", foo = "function"),
+          function(object, foo, ...) {
+            warning("Warning: Only monotonic functions make sense for transformations")
+            
+            new_lb <- foo(object@lb)
+            new_ub <- foo(object@ub)
+            
+            waldCI(level = object@level,
+                   lb = new_lb,
+                   ub = new_ub)
+            })
+```
+
+b. Use your waldCI class to create three objects:
+
+* ci1: (17.2, 24.7), 95%
+
+* ci2: mean: 13, standard error: 2.5, 99%
+
+* ci3: (27.43, 39.22), 75%
+
+``` {r}
+ci1 <- waldCI(level = 0.95, lb = 17.2, ub = 24.7)
+show(ci1)
+
+ci2 <- waldCI(level = 0.99, mean = 13, sterr = 2.5)
+show(ci2)
+
+ci3 <- waldCI(level = 0.75, lb = 27.43, ub = 39.22)
+show(ci3)
+```
+
+Evaluate the following code:
+``` {r}
+ci1
+ci2
+ci3
+as.numeric(ci1)
+as.numeric(ci2)
+as.numeric(ci3)
+lb(ci2)
+ub(ci2)
+mean(ci1)
+sterr(ci3)
+level(ci2)
+lb(ci2) <- 10.5
+mean(ci3) <- 34
+level(ci3) <- .8
+contains(ci1, 17)
+contains(ci3, 44)
+overlap(ci1, ci2)
+eci1 <- transformCI(ci1, sqrt)
+eci1
+mean(transformCI(ci2, log))
+```
+
+c. Show that your validator does not allow the creation of invalid confidence intervals:
+
+* negative standard error
+
+* lb > ub
+
+* Infinite bounds
+
+* invalid use of the setters
+
+``` {r}
+# negative sterr
+try({waldCI(level = 0.95, mean = 10, sterr = -2)})
+
+# lb > ub
+try({waldCI(level = 0.95, lb = 10, ub = 5)})
+
+# infinite bounds
+try({waldCI(level = 0.95, lb = -Inf, ub = Inf)})
+
+# invalid use of setters
+try({
+  ci <- waldCI(level = 0.95, mean = 10, sterr = 2)
+  lb(ci) <- 15   # This should trigger validation failure if ub < lb now
+  ub(ci) <- 5
+  validObject(ci)
+})
+```
+
+## Problem 3
+
+First, I load the ggplot2 library and the data. Currently, the "date" variable is a character variable, so I change the it to be of type Date.
+``` {r}
+# install.packages("plotly")
+library(plotly)
+library(dplyr)
+library(lubridate)
+
+us_states <- read.csv("data/us-states.csv")
+us_states$date <- as.Date(us_states$date)
+```
+
+a. How many major and minor spikes in cases were there?
+``` {r}
+us_states_date <- us_states %>%
+  group_by(date) %>%
+  summarise(total_cases = sum(cases))
+  
+us_states_week <- us_states %>%
+  mutate(week = floor_date(date, "week")) %>%
+  group_by(week) %>%
+  summarise(cases_week_avg = sum(cases) / 7)
+
+p <- plot_ly(us_states_date, 
+             x = ~date, y = ~total_cases,
+             type = "scatter", mode = "markers",
+             marker = list(color = "slategray", opacity = 0.3, size = 4),
+             name = "Daily Cases") %>%
+  add_trace(
+    data = us_states_week,
+    x = ~week, y = ~cases_week_avg,
+    type = "scatter", mode = "lines",
+    line = list(width = 3),
+    name = "Weekly Average"
+  ) %>%
+  layout(
+    title = "Major and Minor COVID-19 Case Spikes in the U.S.",
+    xaxis = list(title = "Date"),
+    yaxis = list(title = "Total Daily New Cases")
+  )
+
+p 
+
+# TODO: create color segments?
+```
+
+b. For the states with the highest and lowest overall rates per population, what differences do you see in their trajectories over time?
+``` {r}
+spectral <- grDevices::hcl.colors(length(unique(us_states$state)), "Spectral")
+
+p <- plot_ly(us_states, 
+             x = ~date, y = ~cases_avg_per_100k,
+             color = ~state, colors = spectral,
+             type = "scatter", mode = "lines",
+             line = list(width = 1.5), opacity = 0.5,
+             showlegend = FALSE,
+             text = ~paste(
+               "State:", state,
+               "<br>Date:", date,
+               "<br>Cases per 100k:", round(cases_avg_per_100k, 2)),
+             hoverinfo = "text") %>%
+  layout(
+    title = list(
+      text = "COVID-19 Case Rates by State"
+    ),
+    xaxis = list(title = "Date"),
+    yaxis = list(title = "Average Cases Per 100k Residents")
+  )
+p 
+```
+
+c. Identify, to the best of your ability without a formal test, the first five states to experience Covid in a substantial way.
+``` {r}
+us_states_start <- us_states %>%
+  filter(date > as.Date("2020-03-20"), 
+         date < as.Date("2020-04-20"),
+         cases_avg_per_100k > 15)
+
+spectral <- grDevices::hcl.colors(length(unique(us_states_start$state)), "Spectral")
+
+p <- plot_ly(us_states_start, 
+             x = ~date, y = ~cases_avg_per_100k,
+             color = ~state, colors = spectral,
+             type = "scatter", mode = "lines",
+             line = list(width = 2),
+             text = ~paste(
+               "State:", state,
+               "<br>Date:", date,
+               "<br>Cases per 100k:", round(cases_avg_per_100k, 2)),
+             hoverinfo = "text") %>%
+  layout(
+    title = list(
+      text = "COVID-19 Case Rates by State (Mar–Apr 2020)"
+    ),
+    xaxis = list(title = "Date"),
+    yaxis = list(title = "Average Cases Per 100k Residents"),
+    legend = list(title = list(text = "State"))
+  )
+p 
+```
+
+Attribution 

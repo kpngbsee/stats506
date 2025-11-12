@@ -1,0 +1,30 @@
+---
+title: "PS6"
+format:
+  html:
+    code-overflow: wrap
+    embed-resources: true
+    theme: simplex
+---
+
+## Problem 2
+First, let's load the data.
+``` {r}
+atp_matches <- read.csv("data/atp_matches_2019.csv")
+```
+
+a. How many tournaments took place in 2019?
+``` {r}
+```
+
+b. Did any player win more than one tournament? If so, how many players won more than one tournament, and how many tournaments did the most winning player(s) win?
+``` {r}
+```
+
+c. Is there any evidence that winners have more aces than losers?
+``` {r}
+```
+
+d. Identify the player(s) with the highest win-rate. (Note that this is NOT asking for the highest number of wins.) Restrict to players with at least 5 matches.
+``` {r}
+```
