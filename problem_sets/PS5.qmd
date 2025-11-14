@@ -82,12 +82,8 @@ waldCI <- function(level, mean = NULL, sterr = NULL, lb = NULL, ub = NULL) {
 
 3. A show method.
 ``` {r}
-setGeneric("show",
-           function(object, ...) {
-             standardGeneric("show")
-           })
 setMethod("show", "waldCI",
-  function(object, ...) {
+  function(object) {
     cat("Wald Confidence Interval\n")
     cat("  Confidence level: ", object@level, "\n")
     cat("  Mean: ", object@mean, "\n")
@@ -231,10 +227,8 @@ b. Use your waldCI class to create three objects:
 ``` {r}
 ci1 <- waldCI(level = 0.95, lb = 17.2, ub = 24.7)
 show(ci1)
-
 ci2 <- waldCI(level = 0.99, mean = 13, sterr = 2.5)
 show(ci2)
-
 ci3 <- waldCI(level = 0.75, lb = 27.43, ub = 39.22)
 show(ci3)
 ```
@@ -301,28 +295,37 @@ library(plotly)
 library(dplyr)
 library(lubridate)
 
-us_states <- read.csv("data/us-states.csv")
-us_states$date <- as.Date(us_states$date)
+covid <- read.csv("data/us-states.csv")
+covid$date <- as.Date(covid$date)
 ```
 
 a. How many major and minor spikes in cases were there?
+
+One additional thing I did here was to filter the total cases to get rid of negative cases. To me, it doesn't make sense to have negative cases.
 ``` {r}
-us_states_date <- us_states %>%
+covid_date <- covid %>%
   group_by(date) %>%
-  summarise(total_cases = sum(cases))
+  summarise(total_cases = sum(cases)) %>%
+  filter(total_cases > 0)
   
-us_states_week <- us_states %>%
+covid_week <- covid %>%
   mutate(week = floor_date(date, "week")) %>%
   group_by(week) %>%
   summarise(cases_week_avg = sum(cases) / 7)
 
-p <- plot_ly(us_states_date, 
-             x = ~date, y = ~total_cases,
-             type = "scatter", mode = "markers",
-             marker = list(color = "slategray", opacity = 0.3, size = 4),
-             name = "Daily Cases") %>%
+p <- plot_ly() %>%
   add_trace(
-    data = us_states_week,
+    data = covid_date,
+    x = ~date, y = ~total_cases,
+    type = "scatter", mode = "markers",
+    marker = list(
+      color = ~sqrt(total_cases),
+      colorscale = "Reds",
+      showscale = FALSE
+      ),
+    name = "Daily Cases") %>%
+  add_trace(
+    data = covid_week,
     x = ~week, y = ~cases_week_avg,
     type = "scatter", mode = "lines",
     line = list(width = 3),
@@ -330,50 +333,122 @@ p <- plot_ly(us_states_date,
   ) %>%
   layout(
     title = "Major and Minor COVID-19 Case Spikes in the U.S.",
-    xaxis = list(title = "Date"),
+    xaxis = list(title = "Date", 
+                 range = c(min(covid_date$date), max(covid_date$date))),
     yaxis = list(title = "Total Daily New Cases")
   )
 
-p 
+# add interactivity for fun
+p <- p %>% layout(
+  updatemenus = list(
+    list(
+      type = "buttons",
+      x = -0.1,
+      buttons = list(
 
-# TODO: create color segments?
+        list(
+            label = "Daily",
+            method = "restyle",
+            args = list(
+              list(visible = list(TRUE, FALSE), 
+                   "marker.opacity" = list(0.8, NA))
+            )
+          ),
+          list(
+            label = "Weekly",
+            method = "restyle",
+            args = list("visible", list(FALSE, TRUE))
+          ),
+          list(
+            label = "Both",
+            method = "restyle",
+            args = list(
+              list(visible = list(TRUE, TRUE), 
+                   "marker.opacity" = list(0.4, NA))
+              )
+            )
+        ))
+    )
+  )
+
+p 
 ```
+Based on the graph, I can estimate one major spike, and around 3-4 minor spikes.
 
 b. For the states with the highest and lowest overall rates per population, what differences do you see in their trajectories over time?
-``` {r}
-spectral <- grDevices::hcl.colors(length(unique(us_states$state)), "Spectral")
 
-p <- plot_ly(us_states, 
+I was inspired by the solution for PS4 for this updated solution. First, let's visualize the states with the highest and lowest overall rates per population. I chose to use a bar graph.
+``` {r}
+covid_state <- covid %>%
+  group_by(state) %>%
+  summarize(total = sum(cases_avg_per_100k)) %>%
+  ungroup()
+
+p <- plot_ly() %>%
+  add_trace(
+    data = covid_state,
+    y = ~state, x = ~total,
+    type = "bar",
+    marker = list(
+      color = ~total,
+      colorscale = "Portland",
+      showscale = FALSE),
+    name = "Daily Cases",
+    text = ~paste(
+      "State:", state,
+      "<br>Total Cases per 100k:", round(total, 2)),
+    textposition = "none",
+    hoverinfo = "text") %>%
+  layout(
+    title = "Overall COVID Rates per Population by State",
+    xaxis = list(title = "Total Covid Cases per 100k"),
+    yaxis = list(title = "State"),
+    height = 900
+  )
+
+p 
+```
+
+From the plot above, we can see that the states with the highest overall rates are Rhode Island and Alaska. The states with the lowest overall rates are Maine and Maryland. Hence, I will look more closely at these 5 states in the next plot. 
+``` {r}
+states <- c("Rhode Island", "Alaska", "Maine", "Maryland")
+  
+p <- plot_ly(covid %>% filter(state %in% states), 
              x = ~date, y = ~cases_avg_per_100k,
-             color = ~state, colors = spectral,
+             color = ~state, 
+             colors = c(
+                "Rhode Island" = "firebrick",
+                "Alaska" = "darksalmon",
+                "Maine" = "royalblue",
+                "Maryland" = "skyblue"
+              ),
              type = "scatter", mode = "lines",
-             line = list(width = 1.5), opacity = 0.5,
-             showlegend = FALSE,
+             line = list(width = 2),
              text = ~paste(
                "State:", state,
                "<br>Date:", date,
                "<br>Cases per 100k:", round(cases_avg_per_100k, 2)),
              hoverinfo = "text") %>%
   layout(
-    title = list(
-      text = "COVID-19 Case Rates by State"
-    ),
+    title = list(text = "COVID-19 Case Rates by State (Highest & Lowest Overall Rates)"),
     xaxis = list(title = "Date"),
-    yaxis = list(title = "Average Cases Per 100k Residents")
+    yaxis = list(title = "Average Cases Per 100k Residents"),
+    legend = list(title = list(text = "State"))
   )
 p 
 ```
+From the plot above, we can see states with the highest overall rates (RI and Alaska) show much more prominent spikes as compared to the states with the lowest overall rates (Maine and Maryland).
 
 c. Identify, to the best of your ability without a formal test, the first five states to experience Covid in a substantial way.
 ``` {r}
-us_states_start <- us_states %>%
+covid_start <- covid %>%
   filter(date > as.Date("2020-03-20"), 
          date < as.Date("2020-04-20"),
          cases_avg_per_100k > 15)
 
-spectral <- grDevices::hcl.colors(length(unique(us_states_start$state)), "Spectral")
+spectral <- grDevices::hcl.colors(length(unique(covid_start$state)), "Spectral")
 
-p <- plot_ly(us_states_start, 
+p <- plot_ly(covid_start, 
              x = ~date, y = ~cases_avg_per_100k,
              color = ~state, colors = spectral,
              type = "scatter", mode = "lines",
@@ -384,14 +459,17 @@ p <- plot_ly(us_states_start,
                "<br>Cases per 100k:", round(cases_avg_per_100k, 2)),
              hoverinfo = "text") %>%
   layout(
-    title = list(
-      text = "COVID-19 Case Rates by State (Mar–Apr 2020)"
-    ),
+    title = list(text = "COVID-19 Case Rates by State (Mar–Apr 2020)"),
     xaxis = list(title = "Date"),
     yaxis = list(title = "Average Cases Per 100k Residents"),
     legend = list(title = list(text = "State"))
   )
 p 
 ```
+By restricting the plot to show the first few months of COVID, and by filtering such that only states above a certain rate are shown, we can see that the first four states to experience COVID in a substantial way are New York, then New Jersey, then Louisiana, then Guam. The fifth state can be debated to be between Connecticut and Massachusetts.
 
-Attribution 
+## Attribution 
+
+* Referred to PS4 solutions to refine my plots for PS5 Q3
+
+* Plotly R documentation: https://plotly.com/r/
