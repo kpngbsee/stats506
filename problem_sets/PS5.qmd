@@ -384,7 +384,7 @@ covid_state <- covid %>%
   summarize(total = sum(cases_avg_per_100k)) %>%
   ungroup()
 
-p <- plot_ly() %>%
+p <- plot_ly(height = 900) %>%
   add_trace(
     data = covid_state,
     y = ~state, x = ~total,
@@ -402,8 +402,7 @@ p <- plot_ly() %>%
   layout(
     title = "Overall COVID Rates per Population by State",
     xaxis = list(title = "Total Covid Cases per 100k"),
-    yaxis = list(title = "State"),
-    height = 900
+    yaxis = list(title = "State")
   )
 
 p 
