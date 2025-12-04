@@ -7,8 +7,10 @@ format:
     theme: simplex
 ---
 
+
 ## Problem 1
 In the notes, we defined a C_mean function. Using this as a template, implement a C_moment function that returns the kth central moment. Generate a vector of moderate length and show that you are able to replicate the results of e1071::moment.
+
 ``` {r}
 # rm(list=ls())
 library(Rcpp)
@@ -34,8 +36,10 @@ cat("Order = 1: \nC_moment: ", C_moment(x), "\ne1071 moment: ", moment(x))
 cat("Order = 2: \nC_moment: ", C_moment(x, order=2), "\ne1071 moment: ", moment(x, order=2))
 ```
 
+
 ## Problem 2
 a. Write a class bootstrapWaldCI that produces a CI using bootstrap, similar to waldCI.
+
 ``` {r}
 library(parallel)
 
@@ -146,7 +150,9 @@ setMethod("rebootstrap", "bootstrapWaldCI", function(object) {
 )
 ```
 
+
 b. Show your code works by executing the following:
+
 ``` {r}
 ci1 <- makeBootstrapCI(function(x) mean(x$y),
                        ggplot2::diamonds,
@@ -155,7 +161,9 @@ ci1
 rebootstrap(ci1)
 ```
 
+
 c. Write a function called dispCoef that takes in data (based upon mtcars; it must take in a generic data for the bootstrap) and fits the model: mpg ~     cyl + disp + wt. It should return the coefficient associated with disp. Execute the following:
+
 
 ``` {r}
 #' Takes in data and fits a model
@@ -177,17 +185,21 @@ ci2
 rebootstrap(ci2)
 ```
 
+
 ## Problem 3
 Generate artificial data by running the code in this script. Do not include this script in your submitted PDF; either use source() or save/load to get the data into R.
+
 
 ``` {r}
 source("data/ps6-problem3.R")
 head(df)
 ```
 
+
 a. Fit one model per country. Fit a mixed effects logistic regression model, predicting course completion based upon prior GPA, number of forum posts, number of quiz attempts, and a random effect for device type. Standardize the predictors within each country. Generate some sort of visualization of the estimated coefficients for number of forum posts in each country.
 
 Report the running time (from system.time) for each of the 6 models.
+
 ``` {r}
 library(dplyr)
 
@@ -243,7 +255,9 @@ coef_df <- data.frame(
 )
 coef_df
 ```
+
 The above is a dataframe that displays the runtime for each model, the coefficient estimate, and the standard error.
+
 
 ``` {r}
 coef_df$lower <- coef_df$coef - 1.96 * coef_df$se
@@ -263,7 +277,9 @@ ggplot(coef_df, aes(x = coef, y = rownames(coef_df))) +
 
 ```
 
+
 b. Devise an approach that minimizes the running time of your script. Report the running time of your entire script (running models and estimating coefficients; no need for a new plot). Do not use a different package for the models. Show that the results match those from part a).
+
 ``` {r}
 cl <- makeCluster(6)
 clusterExport(cl, "df_list")
@@ -287,7 +303,9 @@ system.time({
 
 stopCluster(cl)
 ```
+
 From the above, the total elapsed time is similar to the runtime of the model with the slowest runtime in part (a).
+
 
 ``` {r}
 parallel_time <- sapply(parallel_results, `[[`, "time")
@@ -299,17 +317,21 @@ coef_df$parallel_coef <- parallel_coef
 
 coef_df[,c("country", "time", "parallel_time", "coef", "parallel_coef")]
 ```
+
 From the above, we can see they both produced the same coefficient estimates, while individual model times were similar (in other words, the runtime for each model were the same between serial and parallel, but the total elapsed time differs.)
 
 ## Problem 4
 
 For this problem, I referred to the PS4 solutions and followed the approach used there, but using data.table. 
+
 ``` {r}
 library(data.table)
 atp_matches <- fread("data/atp_matches_2019.csv")
 ```
 
+
 a. How many tournaments took place in 2019?
+
 ``` {r}
 # initial unique tournaments
 tourneys <- unique(atp_matches[, .(tourney_name)])
@@ -322,9 +344,11 @@ tourneys[, tourney_name := sub("Davis.*", "Davis Cup", tourney_name)]
 tourneys <- unique(tourneys)
 nrow(tourneys)
 ```
+
 69 unique tournaments took place in 2019. 
 
 b. Did any player win more than one tournament? If so, how many players won more than one tournament, and how many tournaments did the most winning player(s) win?
+
 ``` {r}
 # following ps4 solutions:
 # arrange by tourney_name, descending match_num
@@ -348,9 +372,11 @@ multiwinners <- winners[
 multiwinners
 nrow(multiwinners)
 ```
+
 17 players won more than one tournament. Rafael Nadal won the most, with 9 tournament wins. 
 
 c. Is there any evidence that winners have more aces than losers?
+
 ``` {r}
 # following ps4 solutions,
 
@@ -365,9 +391,11 @@ aces[, win_more := w_ace > l_ace]
 test <- prop.test(sum(aces$win_more), nrow(aces), p = 0.5)
 test
 ```
+
 The p value is 4.952e-14 < 0.05, which indicates that winners have more aces than losers.
 
 d. Identify the player(s) with the highest win-rate. (Note that this is NOT asking for the highest number of wins.) Restrict to players with at least 5 matches.
+
 ``` {r}
 # pivot_longer winners and losers
 long <- rbindlist(list(
@@ -392,6 +420,7 @@ rates <- long[
 # slice(1:2)
 rates[1:2]
 ```
+
 The player with the highest winrate of 87% is Rafael Nadal.
 
 ## Attribution
