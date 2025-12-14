@@ -1,34 +1,344 @@
 ---
-title: "stats506-project"
-format: html
-editor: visual
+title: "Labor Market Perceptions and Employment Trends During U.S. Recessions"
+author: "Kris Png"
+format: 
+  pdf:
+    pdf-engine: xelatex  
+    geometry: "margin=1in"
+    documentclass: article
+    fontsize: 12pt
+    linestretch: 1.5
+    number-sections: true
+    include-in-header:
+      text: |
+        \usepackage{tabularray}
+        \usepackage{titlesec}
+
+        \titleformat{\section}{\normalsize\bfseries}{\thesubsection}{1em}{}
+        
+        \makeatletter
+        \renewcommand{\@maketitle}{%
+          \begin{center}
+            {\large\bfseries \@title \par}
+            \vspace{0.5em}
+            {\normalsize \@author \par}
+            \vspace{2em}
+          \end{center}
+        }
+        \makeatother
+execute:
+  echo: false
 ---
 
-``` {r}
+``` {r, message=FALSE, warning=FALSE}
+# libraries
+
+# rm(list=ls())
 library(haven)
-data <- read_sav("./GSS_spss/gss7224_r2.sav")
+library(tidyverse)
+library(patchwork)
+library(modelsummary)
+library(broom)
+
+library(gt)
+library(kableExtra)
 ```
 
 ``` {r}
-library(tidyverse)
+gss_data <- read.csv("gss_sample.csv")
+```
 
-data %>%
-  # Drop missing values
-  filter(!is.na(satfin), !is.na(year)) %>%
-  
-  # Group by year and work status
-  group_by(year, satfin) %>%
-  
-  # Count how many people fall into each category per year
+
+``` {r}
+# set formatting
+options(modelsummary_factory_latex = 'kableExtra')
+options(kableExtra.latex.load_packages = FALSE)
+```
+
+# Introduction
+
+Concerns about a potential economic downturn have grown amid signs of labor market softening and economic uncertainty (Casselman, 2025). To understand how Americans experience these periods, this study examines changes in employment and economic attitudes surrounding three recent U.S. recessions: the 2001 recession, the Great Recession (2007–2009), and the COVID-19 recession. Using General Social Survey data, this study aims to identify patterns in how these measures shift during past economic downturns, thus providing insight into current economic conditions and perceptions.
+
+# Methodology
+
+Using General Social Survey data from 1993-2024, I analyzed employment status, job satisfaction (1-4 scale), financial satisfaction (1-3 scale), perceived likelihood of job loss (1-4 scale), and perceived ease of finding a job (1-4 scale). Missing values were removed, and employment status was recoded into 2 levels, employed and unemployed. After data preprocessing, the number of valid responses equaled to N=50,806. Recession years were identified using NBER dates, matched to nearest survey years. Logistic regression models predicted recessionary periods, supplemented by t-tests and chi-square tests comparing recession vs. non-recession periods.
+
+# Results
+
+Analysis revealed three key patterns. Firstly, unemployment was significantly higher during recessions (Odds Ratio (OR) = 1.134, p < 0.001), as seen in Panel A of Figure 1, where unemployment rates rose, as unemployment rates rose around recessionary periods; the chi-squared test corroborates this association (Chi-Sq = 32.296, p < 0.001; Table 2). Secondly, perceived job loss likelihood increased substantially (mean difference = 0.120, p < 0.001; Table 3), which corresponds to Panel B of Figure 1, where "Not At All Likely" responses drop. Thirdly, perceived ease of finding employment decreased (mean difference = -0.136, p < 0.001; Table 3), reflected in Panel C of Figure 1 by rising "Not Easy At All" and dropping "Very Easy" proportions. Meanwhile, satisfaction measures showed no significant recession-related changes; this includes financial satisfaction (mean difference = 0.004, p = 0.608; Table 3) and job satisfaction (mean difference = 0.003, p = 0.797; Table 3).
+
+``` {r}
+# employment vs year
+p1 <- gss_data %>%
+  filter(!is.na(wrkstat), !is.na(year),
+         wrkstat %in% c(1, 2, 3, 4)) %>%
+  mutate(employed = ifelse(wrkstat %in% c(1, 2, 3), 1, 0)) %>%
+  group_by(year, employed) %>%
   summarise(n = n(), .groups = "drop_last") %>%
-  
-  # Compute proportions by year
   mutate(prop = n / sum(n)) %>%
   
-  # Plot
-  ggplot(aes(x = year, y = prop, color = as.factor(satfin))) +
-  geom_line(size = 1.2) +
+  # plot
+  ggplot(aes(x = year, y = prop, color = as.factor(employed))) +
+  geom_line(linewidth = 1.2) +
   geom_point(size = 1.5) +
-  scale_y_continuous(labels = scales::percent_format()) +
-  theme_minimal() 
+  
+  geom_vline(xintercept = 2001, linetype = "dashed") +
+  annotate("text", x = 2001, y = 0.7, label = "2001",
+           angle = 90, vjust = -0.5) + 
+  geom_vline(xintercept = 2007, linetype = "dashed") +
+  annotate("text", x = 2007, y = 0.7, label = "2007",
+           angle = 90, vjust = -0.5) + 
+  geom_vline(xintercept = 2020, linetype = "dashed") +
+  annotate("text", x = 2020, y = 0.7, label = "2020",
+           angle = 90, vjust = -0.5) + 
+  
+  scale_y_continuous(labels = scales::percent_format(), limits = c(0,1)) +
+  scale_color_discrete(
+    name = "Work Status",
+    labels = c(
+      "1" = "Employed",
+      "0" = "Unemployed")) +
+  
+  labs(
+    title = "(A) Employment Rate Over Time",
+    x = "Year",
+    y = "Proportion of Respondents"
+  ) +
+  
+  theme_minimal(base_family = "serif") +
+  theme(
+    legend.position = "bottom",
+    legend.title = element_text(size = 10),
+    legend.text  = element_text(size = 9),
+    legend.key.size = unit(0.6, "cm"),
+    plot.title = element_text(hjust = 0.5)
+  ) + 
+  guides(
+    color = guide_legend(
+      title.position = "top",
+      title.hjust = 0.5 
+    )
+  )
 ```
+
+``` {r}
+# joblose vs year
+p2 <- gss_data %>%
+  filter(!is.na(joblose), !is.na(year)) %>%
+  group_by(year, joblose) %>%
+  summarise(n = n(), .groups = "drop_last") %>%
+  mutate(prop = n / sum(n)) %>%
+  
+  # plot
+  ggplot(aes(x = year, y = prop, color = as.factor(joblose))) +
+  geom_line(linewidth = 1.2) +
+  geom_point(size = 1.5) +
+  
+  geom_vline(xintercept = 2001, linetype = "dashed") +
+  annotate("text", x = 2001, y = 0.8, label = "2001",
+           angle = 90, vjust = -0.5) + 
+  geom_vline(xintercept = 2007, linetype = "dashed") +
+  annotate("text", x = 2007, y = 0.8, label = "2007",
+           angle = 90, vjust = -0.5) + 
+  geom_vline(xintercept = 2020, linetype = "dashed") +
+  annotate("text", x = 2020, y = 0.8, label = "2020",
+           angle = 90, vjust = -0.5) + 
+  
+  scale_y_continuous(labels = scales::percent_format(), limits = c(0,0.9)) +
+  scale_color_discrete(
+    name = "Likelihood of Losing Job",
+    labels = c(
+      "1" = "Very Likely",
+      "2" = "Fairly Likely",
+      "3" = "Not Too Likely",
+      "4" = "Not At All Likely")
+  ) +
+  labs(
+    title = "(B) Perceived Likelihood of Job Loss Over Time",
+    x = "Year",
+    y = "Proportion of Respondents"
+  ) +
+  
+  theme_minimal(base_family = "serif") +
+  theme(
+    legend.position = "bottom",
+    legend.title = element_text(size = 10),
+    legend.text  = element_text(size = 9),
+    legend.key.size = unit(0.6, "cm"),
+    plot.title = element_text(hjust = 0.5)
+  ) + 
+  guides(
+    color = guide_legend(
+      title.position = "top",
+      title.hjust = 0.5
+    )
+  )
+```
+
+``` {r}
+# jobfind vs year
+p3 <- gss_data %>%
+  filter(!is.na(jobfind), !is.na(year)) %>%
+  group_by(year, jobfind) %>%
+  summarise(n = n(), .groups = "drop_last") %>%
+  mutate(prop = n / sum(n)) %>%
+  
+  # plot
+  ggplot(aes(x = year, y = prop, color = as.factor(jobfind))) +
+  geom_line(linewidth = 1.2) +
+  geom_point(size = 1.5) +
+  
+  geom_vline(xintercept = 2001, linetype = "dashed") +
+  annotate("text", x = 2001, y = 0.55, label = "2001",
+           angle = 90, vjust = -0.5) + 
+  geom_vline(xintercept = 2007, linetype = "dashed") +
+  annotate("text", x = 2007, y = 0.55, label = "2007",
+           angle = 90, vjust = -0.5) + 
+  geom_vline(xintercept = 2020, linetype = "dashed") +
+  annotate("text", x = 2020, y = 0.55, label = "2020",
+           angle = 90, vjust = -0.5) + 
+  
+  scale_y_continuous(labels = scales::percent_format(), limits = c(0,0.6)) +
+  scale_color_discrete(
+    name = "Likelihood of Finding Job",
+    labels = c(
+      "1" = "Very Easy",
+      "2" = "Somewhat Easy",
+      "3" = "Not Easy At All")) +
+  
+  labs(
+    title = "(C) Perceived Ease of Finding a Job Over Time",
+    x = "Year",
+    y = "Proportion of Respondents"
+  ) +
+  
+  theme_minimal(base_family = "serif") +
+  theme(
+    legend.position = "bottom",
+    legend.title = element_text(size = 10),
+    legend.text  = element_text(size = 9),
+    legend.key.size = unit(0.6, "cm"),
+    plot.title = element_text(hjust = 0.5)
+  ) + 
+  guides(
+    color = guide_legend(
+      title.position = "top",
+      title.hjust = 0.5 
+    )
+  )
+  
+```
+
+``` {r, fig.height = 6.5, fig.width = 8}
+#| fig-cap: "Trends in Employment Status and Perceived Job Market Conditions Over Time"
+#| label: fig-trends
+#| fig-pos: H
+
+p1/(p2 + p3)
+```
+
+# Discussion
+
+These findings suggest that unemployment increases during recessions, and respondents do accurately perceive these labor market risks through job security perceptions. Despite these economic challenges, they maintain stable satisfaction levels regarding jobs and finances. To get to the root of this discrepancy between job security perceptions and satisfaction, more research needs to be done; for example, a possible theory may be that the GSS data does not correspond exactly with recessionary periods, as discussed later in the limitations section, therefore respondents that kept their jobs polled after the recession maintain a similar view between non-recessionary and recessionary period. The consistency across these three distinct recessions indicates that these are patterns not unique to specific economic shocks, and are rather related to recessionary economies as a whole. As such, we may apply this in helping to identify early warning signs in current and future economic data. The patterns identified in this study could help policymakers distinguish between general non-recessionary economic anxiety and recession-linked perceptions. 
+
+This study faces several limitations. Survey timing is not perfectly aligned with recessionary periods, requiring selection of the closest availabel survey years; 2002 was chosen for 2001, 2008 & 2010 for 2007 to 2009, and 2021 for 2020). This mismatch may cause inaccurate analysis, if one may assume that differences in unemployment rates and respondent perceptions similarly peak together with recession peaks, as such the results found in this analysis may not be an accurate reflection of actual results in real-time. Secondly, the recoding of employment status excludes individuals not in the labor force (e.g., retirees, students, homemakers), potentially underestimating recession impacts on household economic perceptions.
+
+Future studies could look further into these measures between demographic groups, such as race, age, and education level. Limitations could be addressed through higher-frequency data collection aligned with business cycles, and through tracking other employment types. 
+
+\newpage
+
+# References
+
+Casselman, B. (2025). The jobs report is canceled. here's what private data shows. *The New York Times*. https://www.nytimes.com/2025/11/07/business/jobs-unemployment-layoffs-economy.html
+
+National Bureau of Economic Research. (n.d.). US business cycle expansions and contractions. https://www.nber.org/research/data/us-business-cycle-expansions-and-contractions
+
+NORC at the University of Chicago. (2024). General Social Survey. https://gss.norc.org/
+
+# Appendix
+
+``` {r}
+# because gss only has certain years, have to choose the closest value
+recession_years <- c(2002, 2008, 2010, 2021)
+
+gss_recession <- gss_data %>%
+  mutate(is_recession = ifelse(year %in% recession_years, 1, 0),
+         unemployed = ifelse(wrkstat %in% c(1, 2, 3), 0, 1))
+```
+
+``` {r, message=FALSE, warning=FALSE, results='asis'}
+#| tbl-cap: "Logistic Regression Models Predicting Recession Periods"
+#| label: tbl-regression
+#| tbl-pos: H
+
+employment_model <- glm(is_recession ~ unemployed, data = gss_recession, family = binomial())
+
+recession_model <- glm(is_recession ~ satfin + satjob + joblose + jobfind,
+             data = gss_recession, family = binomial())
+
+modelsummary(
+  list(
+    "Employment only" = employment_model,
+    "Economic perceptions" = recession_model
+  ),
+  exponentiate = TRUE,
+  statistic = "(p = {p.value})",
+  fmt = 3,
+  stars = TRUE,
+  gof_map = "nobs",
+  coef_map = c(
+    unemployed = "Unemployed",
+    satfin     = "Financial Satisfaction",
+    satjob     = "Job Satisfaction",
+    joblose    = "Perceived Likelihood of Job Loss",
+    jobfind    = "Perceived Ease of Finding Job"
+  )
+)
+```
+
+``` {r, results='asis'}
+#| tbl-cap: "Chi-Square Test: Unemployment × Recession"
+#| label: tbl-chisq
+#| tbl-pos: H
+
+tbl <- table(gss_recession$is_recession, gss_recession$unemployed)
+chisq_test <- chisq.test(tbl)
+
+modelsummary(
+  list("Unemployment × Recession" = chisq_test),
+  float = FALSE,
+  fmt = 3,
+  statistic = c("statistic", "p = {p.value}"),
+  coef_rename = c("method" = "Chi-Squared")
+)
+```
+
+``` {r, results='asis'}
+#| tbl-cap: "T-Test Results: Economic Perceptions by Recession Status"
+#| label: tbl-ttest
+#| tbl-pos: H
+
+t_results <- list(
+  "Financial Satisfaction" = t.test(satfin ~ is_recession, data = gss_recession),
+  "Job Satisfaction" = t.test(satjob ~ is_recession, data = gss_recession),
+  "Perceived Likelihood of Job Loss" = t.test(joblose ~ is_recession, data = gss_recession),
+  "Perceived Ease of Finding Job"  = t.test(jobfind ~ is_recession, data = gss_recession)
+)
+
+modelsummary(
+  t_results,
+  float = FALSE,
+  fmt = 3,
+  statistic = "p = {p.value}",
+  estimate = "{estimate}",
+  gof_omit = ".*",
+  coef_rename = c(
+    "satfin" = "Mean Difference",
+    "satjob" = "Mean Difference", 
+    "joblose" = "Mean Difference",
+    "jobfind" = "Mean Difference"
+  ),
+  shape = model ~ term
+) 
+```
+
