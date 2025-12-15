@@ -15,6 +15,7 @@ format:
         \usepackage{titlesec}
 
         \titleformat{\section}{\normalsize\bfseries}{\thesubsection}{1em}{}
+        \titleformat{\subsection}{\normalsize\bfseries}{\thesubsection}{1em}{}
         
         \makeatletter
         \renewcommand{\@maketitle}{%
@@ -57,15 +58,15 @@ options(kableExtra.latex.load_packages = FALSE)
 
 # Introduction
 
-Concerns about a potential economic downturn have grown amid signs of labor market softening and economic uncertainty (Casselman, 2025). To understand how Americans experience these periods, this study examines changes in employment and economic attitudes surrounding three recent U.S. recessions: the 2001 recession, the Great Recession (2007–2009), and the COVID-19 recession. Using General Social Survey data, this study aims to identify patterns in how these measures shift during past economic downturns, thus providing insight into current economic conditions and perceptions.
+Concerns about a potential economic downturn have grown amid signs of labor market softening and economic uncertainty (Casselman, 2025). To understand how Americans experience these periods, this study examines changes in employment and economic attitudes surrounding three recent U.S. recessions: the 2001 recession, the Great Recession (2007–2009), and the COVID-19 recession (2020). Using General Social Survey data, this study aims to identify patterns in how these measures shift during past economic downturns, thus providing insight into current economic conditions and perceptions.
 
 # Methodology
 
-Using General Social Survey data from 1993-2024, I analyzed employment status, job satisfaction (1-4 scale), financial satisfaction (1-3 scale), perceived likelihood of job loss (1-4 scale), and perceived ease of finding a job (1-4 scale). Missing values were removed, and employment status was recoded into 2 levels, employed and unemployed. After data preprocessing, the number of valid responses equaled to N=50,806. Recession years were identified using NBER dates, matched to nearest survey years. Logistic regression models predicted recessionary periods, supplemented by t-tests and chi-square tests comparing recession vs. non-recession periods.
+Using General Social Survey data from 1993-2024, I analyzed employment status, job satisfaction (1-4 scale), financial satisfaction (1-3 scale), perceived likelihood of job loss (1-4 scale), and perceived ease of finding a job (1-4 scale). Missing values were removed, and employment status was recoded into 2 levels, employed and unemployed. After data preprocessing, the number of valid responses equaled to 50,806. Recession years were identified using NBER business cycle dates, matched to nearest survey years (2002 for 2001, 2008/2010 for 2007-2009, 2021 for 2020). Analyses included logistic regression models predicting recession periods, independent samples t-tests comparing means between recession and non-recession periods, and chi-square tests assessing associations between categorical variables.
 
 # Results
 
-Analysis revealed three key patterns. Firstly, unemployment was significantly higher during recessions (Odds Ratio (OR) = 1.134, p < 0.001), as seen in Panel A of Figure 1, where unemployment rates rose, as unemployment rates rose around recessionary periods; the chi-squared test corroborates this association (Chi-Sq = 32.296, p < 0.001; Table 2). Secondly, perceived job loss likelihood increased substantially (mean difference = 0.120, p < 0.001; Table 3), which corresponds to Panel B of Figure 1, where "Not At All Likely" responses drop. Thirdly, perceived ease of finding employment decreased (mean difference = -0.136, p < 0.001; Table 3), reflected in Panel C of Figure 1 by rising "Not Easy At All" and dropping "Very Easy" proportions. Meanwhile, satisfaction measures showed no significant recession-related changes; this includes financial satisfaction (mean difference = 0.004, p = 0.608; Table 3) and job satisfaction (mean difference = 0.003, p = 0.797; Table 3).
+Analysis revealed three key patterns. Firstly, unemployment was significantly higher during recessions (Odds Ratio (OR) = 1.134, p < 0.001; Table 1), as visually confirmed in Panel A of Figure 1 where unemployment rates rose around recessionary periods; the chi-squared test corroborates this association (Chi-Sq = 32.296, p < 0.001; Table 2). Secondly, perceived job loss likelihood increased substantially (mean difference = 0.120, p < 0.001; Table 3), which corresponds to Panel B of Figure 1, where "Not At All Likely" responses drop around recessionary periods. Thirdly, perceived ease of finding employment decreased (mean difference = -0.136, p < 0.001; Table 3), reflected in Panel C of Figure 1 by rising "Not Easy At All" and dropping "Very Easy" proportions. Meanwhile, satisfaction measures showed no significant recession-related changes; this includes financial satisfaction (mean difference = 0.004, p = 0.608; Table 3) and job satisfaction (mean difference = 0.003, p = 0.797; Table 3).
 
 ``` {r}
 # employment vs year
@@ -239,11 +240,11 @@ p1/(p2 + p3)
 
 # Discussion
 
-These findings suggest that unemployment increases during recessions, and respondents do accurately perceive these labor market risks through job security perceptions. Despite these economic challenges, they maintain stable satisfaction levels regarding jobs and finances. To get to the root of this discrepancy between job security perceptions and satisfaction, more research needs to be done; for example, a possible theory may be that the GSS data does not correspond exactly with recessionary periods, as discussed later in the limitations section, therefore respondents that kept their jobs polled after the recession maintain a similar view between non-recessionary and recessionary period. The consistency across these three distinct recessions indicates that these are patterns not unique to specific economic shocks, and are rather related to recessionary economies as a whole. As such, we may apply this in helping to identify early warning signs in current and future economic data. The patterns identified in this study could help policymakers distinguish between general non-recessionary economic anxiety and recession-linked perceptions. 
+These findings suggest that unemployment increases during recessions, and respondents do accurately perceive these labor market risks through job security perceptions. Despite these economic challenges, they maintain stable satisfaction levels regarding jobs and finances. To get to the root of this discrepancy between job security perceptions and satisfaction, more research needs to be done; a possible theory may be that job security perceptions are influenced by overall economic narratives while satisfaction reflects personal circumstances. The consistency in patterns of employment and attitudes across these three distinct recessions indicates that these are patterns not unique to specific economic shocks, and are rather related to recessionary economies as a whole. As such, we may apply this finding in helping to identify early warning signs in current and future economic data. The patterns identified in this study could help policymakers distinguish between general non-recessionary economic anxiety and recession-linked perceptions. 
 
-This study faces several limitations. Survey timing is not perfectly aligned with recessionary periods, requiring selection of the closest availabel survey years; 2002 was chosen for 2001, 2008 & 2010 for 2007 to 2009, and 2021 for 2020). This mismatch may cause inaccurate analysis, if one may assume that differences in unemployment rates and respondent perceptions similarly peak together with recession peaks, as such the results found in this analysis may not be an accurate reflection of actual results in real-time. Secondly, the recoding of employment status excludes individuals not in the labor force (e.g., retirees, students, homemakers), potentially underestimating recession impacts on household economic perceptions.
+This study faces several limitations. Survey timing is not perfectly aligned with recessionary periods, requiring selection of the closest available survey years; 2002 was chosen for 2001, 2008 & 2010 for 2007 to 2009, and 2021 for 2020. This mismatch may cause inaccurate analysis, if one may assume that differences in unemployment rates and respondent perceptions similarly peak together with recession peaks, as such, the results found in this analysis may not be an accurate reflection of actual results in real-time. Secondly, the recoding of employment status excludes individuals not in the labor force (e.g., retirees, students, homemakers), potentially underestimating recession impacts on economic perceptions.
 
-Future studies could look further into these measures between demographic groups, such as race, age, and education level. Limitations could be addressed through higher-frequency data collection aligned with business cycles, and through tracking other employment types. 
+Future studies could look further into these measures between demographic groups, such as race, age, and education level, to examine how recessionary periods affect demographcis differently. Limitations could be addressed through higher-frequency data collection aligned with business cycles, and through tracking these measures across other employment types. 
 
 \newpage
 
@@ -254,6 +255,9 @@ Casselman, B. (2025). The jobs report is canceled. here's what private data show
 National Bureau of Economic Research. (n.d.). US business cycle expansions and contractions. https://www.nber.org/research/data/us-business-cycle-expansions-and-contractions
 
 NORC at the University of Chicago. (2024). General Social Survey. https://gss.norc.org/
+
+## Link to Github Repository
+https://github.com/kpngbsee/stats506.git
 
 # Appendix
 
