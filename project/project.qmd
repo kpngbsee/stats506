@@ -244,7 +244,7 @@ These findings suggest that unemployment increases during recessions, and respon
 
 This study faces several limitations. Survey timing is not perfectly aligned with recessionary periods, requiring selection of the closest available survey years; 2002 was chosen for 2001, 2008 & 2010 for 2007 to 2009, and 2021 for 2020. This mismatch may cause inaccurate analysis, if one may assume that differences in unemployment rates and respondent perceptions similarly peak together with recession peaks, as such, the results found in this analysis may not be an accurate reflection of actual results in real-time. Secondly, the recoding of employment status excludes individuals not in the labor force (e.g., retirees, students, homemakers), potentially underestimating recession impacts on economic perceptions.
 
-Future studies could look further into these measures between demographic groups, such as race, age, and education level, to examine how recessionary periods affect demographcis differently. Limitations could be addressed through higher-frequency data collection aligned with business cycles, and through tracking these measures across other employment types. 
+Future studies could look further into these measures between demographic groups, such as race, age, and education level, to examine how recessionary periods affect them differently. Limitations could be addressed through higher-frequency data collection aligned with business cycles, and through tracking these measures across other employment types. 
 
 \newpage
 
